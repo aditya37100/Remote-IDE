@@ -1,6 +1,6 @@
 {
-  "name": "Antigravity Mobile Remote",
-  "short_name": "Antigravity",
+  "name": "Remote IDE",
+  "short_name": "Remote IDE",
   "description": "Remotely steer and monitor your Antigravity AI agents and workspace.",
   "start_url": "./",
   "display": "standalone",

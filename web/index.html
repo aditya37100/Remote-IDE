@@ -7,17 +7,21 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Antigravity Remote">
-  <link rel="manifest" href="manifest.json">
-  <title>Antigravity Mobile Remote Companion</title>
+  <title>Remote IDE</title>
   <link rel="stylesheet" href="css/app.css">
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
 
   <!-- App Header -->
   <header class="app-header">
-    <div class="brand-wrapper">
-      <div class="brand-icon">AG</div>
-      <div class="brand-title">Antigravity Remote</div>
+    <div class="app-header-title">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      Remote IDE
     </div>
     <div id="status-badge" class="status-badge">
       <div class="status-dot"></div>
@@ -164,6 +168,7 @@
     </div>
   </div>
 
+  <script src="js/marked.min.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/app.js"></script>
 </body>

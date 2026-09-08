@@ -302,14 +302,24 @@
       lastMsg = document.createElement('div');
       lastMsg.className = 'message assistant';
       var bubble = document.createElement('div');
-      bubble.className = 'message-bubble';
-      bubble.textContent = content;
+      bubble.className = 'message-bubble markdown-body';
+      bubble.dataset.raw = content;
+      if (window.marked) {
+        bubble.innerHTML = marked.parse(content);
+      } else {
+        bubble.textContent = content;
+      }
       lastMsg.appendChild(bubble);
       chatScroll.appendChild(lastMsg);
     } else {
       var bubble = lastMsg.querySelector('.message-bubble');
       if (bubble) {
-        bubble.textContent += content;
+        bubble.dataset.raw = (bubble.dataset.raw || '') + content;
+        if (window.marked) {
+          bubble.innerHTML = marked.parse(bubble.dataset.raw);
+        } else {
+          bubble.textContent = bubble.dataset.raw;
+        }
       }
     }
     scrollChatBottom();

@@ -1,6 +1,6 @@
 {
   "name": "antigravity-mobile-remote",
-  "displayName": "Antigravity Mobile Remote Companion",
+  "displayName": "Remote IDE",
   "description": "Securely monitor, steer, and interact with Antigravity AI agents, diffs, and workspace from your mobile phone at $0 cost.",
   "version": "0.1.0",
   "license": "MIT",

@@ -186,7 +186,7 @@ export function activate(context: vscode.ExtensionContext) {
             throw new Error(`Antigravity CLI not found at ${agyPath}. Please install it.`);
           }
 
-          const args = ['--print', text];
+          const args = ['--print', text, '--print-timeout', '1h'];
           if (!isNewChat) {
             args.unshift('--continue');
           }
