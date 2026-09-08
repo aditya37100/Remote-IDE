@@ -231,10 +231,24 @@
         hideAuthOverlay();
         updateStatus('idle', 'Connected');
         showToast('Authenticated!', 'success');
+        sendWs('client:request_models', {});
         break;
 
       case 'agent:status':
         updateStatus(payload.status, payload.label);
+        break;
+
+      case 'agent:models_list':
+        var select = document.getElementById('model-selector');
+        if (select && Array.isArray(payload)) {
+          select.innerHTML = '';
+          payload.forEach(function(model) {
+            var option = document.createElement('option');
+            option.value = model.id;
+            option.textContent = model.name;
+            select.appendChild(option);
+          });
+        }
         break;
 
       case 'agent:thought':
@@ -472,8 +486,10 @@
       return;
     }
 
+    var selectedModel = document.getElementById('model-selector')?.value || undefined;
+
     appendUserMessage(text);
-    sendWs('client:prompt', { text: text, isNewChat: isNewChat });
+    sendWs('client:prompt', { text: text, isNewChat: isNewChat, model: selectedModel });
     
     // After first prompt, continue chat
     isNewChat = false;

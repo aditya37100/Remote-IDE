@@ -124,13 +124,54 @@ export function activate(context: vscode.ExtensionContext) {
         sidebarProvider?.refresh();
       });
 
-      // Hook client:prompt events — relay messages from mobile to IDE
+      // Global reference to the currently running child process for interactive stdin
+      let activeChildProcess: cp.ChildProcess | null = null;
+
+      companionServer.getSocketManager().on('client:request_models', async () => {
+        try {
+          const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
+          const agyPath = path.join(localAppData, 'agy', 'bin', 'agy.exe');
+          if (fs.existsSync(agyPath)) {
+            cp.exec(`"${agyPath}" models`, (error, stdout) => {
+              if (!error && stdout) {
+                const models: {id: string, name: string}[] = [];
+                const lines = stdout.split('\n');
+                for (const line of lines) {
+                  if (line.includes('\t')) {
+                    const [id, ...nameParts] = line.split('\t');
+                    models.push({ id: id.trim(), name: nameParts.join(' ').trim() });
+                  }
+                }
+                if (models.length > 0) {
+                  companionServer?.getSocketManager().broadcast('agent:models_list', models);
+                }
+              }
+            });
+          }
+        } catch (e) {}
+      });
+
       companionServer.getSocketManager().on('client:prompt', async (payload: any) => {
         const text = payload?.text || '';
         console.log('[Extension] Received prompt from mobile:', text);
 
         try {
+          // If there's an active process running, we pipe the text into its stdin!
+          // This allows the user to answer interactive prompts like [y/N]
+          if (activeChildProcess && !activeChildProcess.killed) {
+            console.log('[Extension] Piping input to active child process stdin');
+            activeChildProcess.stdin?.write(text + '\n');
+            
+            // Echo the user's input to the chat UI stream so they see it locally
+            companionServer?.getSocketManager().broadcast('agent:message', {
+              content: `\n> ${text}\n`,
+              delta: true
+            });
+            return;
+          }
+
           const isNewChat = payload?.isNewChat !== false;
+          const selectedModel = payload?.model || null;
           
           companionServer?.getSocketManager().broadcast('agent:status', {
             status: 'working',
@@ -149,27 +190,22 @@ export function activate(context: vscode.ExtensionContext) {
           if (!isNewChat) {
             args.unshift('--continue');
           }
+          if (selectedModel) {
+            args.push('--model', selectedModel);
+          }
 
           console.log(`[Extension] Spawning: ${agyPath} ${args.join(' ')}`);
 
-          // Ensure scratch directory exists
-          const scratchDir = path.join(os.homedir(), '.gemini', 'antigravity-cli', 'scratch');
-          if (!fs.existsSync(scratchDir)) {
-            fs.mkdirSync(scratchDir, { recursive: true });
-          }
-
-          const child = cp.spawn(agyPath, args, {
-            cwd: scratchDir,
+          activeChildProcess = cp.spawn(agyPath, args, {
+            cwd: workspaceRoot, // Use the dynamically resolved VS Code workspace root!
             windowsHide: true,
             env: process.env
           });
 
-          // We will stream the stdout as agent:message deltas
           let firstChunk = true;
 
-          child.stdout.on('data', (data) => {
+          activeChildProcess.stdout?.on('data', (data) => {
             const chunk = data.toString();
-            // Send delta updates to mobile
             companionServer?.getSocketManager().broadcast('agent:message', {
               content: chunk,
               delta: !firstChunk
@@ -177,13 +213,13 @@ export function activate(context: vscode.ExtensionContext) {
             firstChunk = false;
           });
 
-          child.stderr.on('data', (data) => {
-            // Optional: you can stream stderr as well, or just log it
+          activeChildProcess.stderr?.on('data', (data) => {
             console.log(`[agy stderr]: ${data.toString()}`);
           });
 
-          child.on('close', (code) => {
+          activeChildProcess.on('close', (code) => {
             console.log(`[Extension] agy exited with code ${code}`);
+            activeChildProcess = null; // Clear active process
             companionServer?.getSocketManager().broadcast('agent:status', {
               status: 'idle',
               label: 'Task Finished'
@@ -196,7 +232,8 @@ export function activate(context: vscode.ExtensionContext) {
             }
           });
 
-          child.on('error', (err) => {
+          activeChildProcess.on('error', (err) => {
+            activeChildProcess = null;
             throw err;
           });
 
