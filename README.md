@@ -17,21 +17,46 @@ This extension runs a lightweight local WebSocket server embedded directly insid
 
 All processing, LLM requests, and code execution happen on your local machine.
 
-## 📱 Installation & Usage
-
-1. Open VS Code and install the generated `.vsix` file.
-2. In the Activity Bar, click the **Antigravity Remote** icon.
-3. Click **Start Session**.
-4. Scan the QR code with your phone.
-5. Enter the **6-digit PIN** displayed in VS Code to authenticate.
-6. Start chatting! The prompt will instantly execute on your IDE's `agy` CLI process, streaming output back to your phone.
-
 ## ⚙️ Requirements
-- Windows OS
+- Windows, macOS, or Linux
 - Node.js (v18+)
 - VS Code (v1.80+)
-- MSYS2 (MinGW 64) for Git execution
-- Global Antigravity CLI (`agy`) installed in your `LOCALAPPDATA`
+- Global Antigravity CLI (`agy`) installed in your environment
+
+## 🚀 Building & Installation from Source
+
+If you want to build and modify the extension yourself:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/aditya37100/Antigravity-Remote-IDE.git
+   cd Antigravity-Remote-IDE
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Build the VSIX package:**
+   ```bash
+   npm run package
+   ```
+   *This uses `vsce` internally to generate a `.vsix` file (e.g., `antigravity-remote-ide-0.1.0.vsix`).*
+
+4. **Install in VS Code:**
+   - Open VS Code.
+   - Go to the **Extensions** panel (`Ctrl+Shift+X` / `Cmd+Shift+X`).
+   - Click the `...` menu in the top right.
+   - Select **Install from VSIX...** and choose the generated `.vsix` file.
+
+## 📱 How to Use
+
+1. Once installed, click the **Antigravity Remote** icon in the VS Code Activity Bar.
+2. Click **Start Session**.
+3. Scan the generated QR code with your phone.
+4. Enter the **6-digit PIN** displayed in VS Code to authenticate.
+5. Start chatting! The prompt will instantly execute on your IDE's `agy` CLI process, streaming output back to your phone.
 
 ## 📄 License
 MIT License.
