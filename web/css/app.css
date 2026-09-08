@@ -50,6 +50,24 @@ body {
   flex-shrink: 0;
 }
 
+.new-chat-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.new-chat-btn:hover, .new-chat-btn:active {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
 .brand-wrapper {
   display: flex;
   align-items: center;

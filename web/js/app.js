@@ -449,17 +449,39 @@
     });
   }
 
+  var newChatBtn = document.getElementById('newChatBtn');
+  var isNewChat = true;
+
+  if (newChatBtn) {
+    newChatBtn.addEventListener('click', function() {
+      // Clear chat UI
+      document.getElementById('chat-scroll').innerHTML = '';
+      isNewChat = true;
+      showToast('New chat started', 'success');
+      promptInput.focus();
+    });
+  }
+
   function handleSendPrompt() {
     var text = promptInput.value.trim();
     if (!text) return;
-    if (!state.connected) {
-      showToast('Not connected to server', 'error');
+
+    if (!state.connected || !state.token) {
+      showToast('Not connected. Reconnecting...', 'error');
+      connectWebSocket();
       return;
     }
 
     appendUserMessage(text);
-    sendWs('client:prompt', { text: text });
+    sendWs('client:prompt', { text: text, isNewChat: isNewChat });
+    
+    // After first prompt, continue chat
+    isNewChat = false;
+
     promptInput.value = '';
+    promptInput.style.height = 'auto';
+    promptInput.focus();
+
     // Show a brief "Sending..." status
     updateStatus('working', 'Sending...');
     

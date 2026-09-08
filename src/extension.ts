@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as cp from 'child_process';
 import { MobileCompanionServer } from './server/app';
 import { TunnelManager } from './server/tunnel';
 import { SessionLifecycleManager } from './bridge/keepAwake';
@@ -126,98 +129,86 @@ export function activate(context: vscode.ExtensionContext) {
         const text = payload?.text || '';
         console.log('[Extension] Received prompt from mobile:', text);
 
-        let submitted = false;
-
         try {
-          // ============================================================
-          // STRATEGY 1: Use the VS Code / Antigravity Chat UI
-          // This is the preferred method so the user can visually sync
-          // with the agent's thoughts and responses.
-          // ============================================================
-          try {
-            // Open the chat panel with the prompt pre-filled
-            await vscode.commands.executeCommand('workbench.action.chat.open', text);
-            // Wait for the UI to settle and focus the input
-            await new Promise(r => setTimeout(r, 400));
+          const isNewChat = payload?.isNewChat !== false;
+          
+          companionServer?.getSocketManager().broadcast('agent:status', {
+            status: 'working',
+            label: 'Agent processing...'
+          });
 
-            // Execute submission commands. We fire multiple possible submit
-            // commands because different VS Code / Antigravity versions
-            // use different command IDs, and executeCommand often doesn't throw
-            // if a command is unmapped.
-            const submitCommands = [
-              'workbench.action.chat.submit',
-              'antigravity.chat.submit',
-              'agy.chat.submit',
-              'workbench.action.chat.acceptInput'
-            ];
+          // Build path to agy.exe
+          const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
+          const agyPath = path.join(localAppData, 'agy', 'bin', 'agy.exe');
 
-            for (const cmd of submitCommands) {
-              try { await vscode.commands.executeCommand(cmd); } catch (e) { /* ignore */ }
-            }
-
-            submitted = true;
-            console.log('[Extension] Prompt dispatched to Chat UI');
-          } catch (e: any) {
-            console.log('[Extension] Chat UI strategy failed:', e.message || e);
+          if (!fs.existsSync(agyPath)) {
+            throw new Error(`Antigravity CLI not found at ${agyPath}. Please install it.`);
           }
 
-          // ============================================================
-          // STRATEGY 2: Use the Antigravity CLI (`agy`) via terminal
-          // If the chat panel fails, we spawn a visible terminal so the
-          // user can still see the agent's output.
-          // ============================================================
-          if (!submitted) {
-            try {
-              const terminal = vscode.window.createTerminal({
-                name: 'Antigravity Mobile Prompt',
-                hideFromUser: false // Make it visible so the user can see the output!
-              });
-              terminal.show();
-              
-              const escapedText = text.replace(/'/g, "'\\''");
-              terminal.sendText(`agy '${escapedText}'`, true);
-              submitted = true;
-              console.log('[Extension] Prompt submitted via agy CLI in visible terminal');
-            } catch (e: any) {
-              console.log('[Extension] agy CLI strategy failed:', e.message || e);
-            }
+          const args = ['--print', text];
+          if (!isNewChat) {
+            args.unshift('--continue');
           }
 
-          // ============================================================
-          // STRATEGY 3: Clipboard fallback (last resort)
-          // ============================================================
-          if (!submitted) {
-            await vscode.env.clipboard.writeText(text);
-            try { await vscode.commands.executeCommand('workbench.action.chat.open'); } catch {}
-            console.log('[Extension] Fallback: copied prompt to clipboard');
+          console.log(`[Extension] Spawning: ${agyPath} ${args.join(' ')}`);
+
+          // Ensure scratch directory exists
+          const scratchDir = path.join(os.homedir(), '.gemini', 'antigravity-cli', 'scratch');
+          if (!fs.existsSync(scratchDir)) {
+            fs.mkdirSync(scratchDir, { recursive: true });
           }
 
-          // Send acknowledgment to mobile
-          if (submitted) {
-            companionServer?.getSocketManager().broadcast('agent:status', {
-              status: 'working',
-              label: 'Agent processing...'
-            });
+          const child = cp.spawn(agyPath, args, {
+            cwd: scratchDir,
+            windowsHide: true,
+            env: process.env
+          });
+
+          // We will stream the stdout as agent:message deltas
+          let firstChunk = true;
+
+          child.stdout.on('data', (data) => {
+            const chunk = data.toString();
+            // Send delta updates to mobile
             companionServer?.getSocketManager().broadcast('agent:message', {
-              content: `✅ Prompt submitted!\n\nCheck your Antigravity IDE (Chat Panel or Terminal) to see the agent working.`,
-              delta: false
+              content: chunk,
+              delta: !firstChunk
             });
-          } else {
+            firstChunk = false;
+          });
+
+          child.stderr.on('data', (data) => {
+            // Optional: you can stream stderr as well, or just log it
+            console.log(`[agy stderr]: ${data.toString()}`);
+          });
+
+          child.on('close', (code) => {
+            console.log(`[Extension] agy exited with code ${code}`);
             companionServer?.getSocketManager().broadcast('agent:status', {
               status: 'idle',
-              label: 'Awaiting manual paste'
+              label: 'Task Finished'
             });
-            companionServer?.getSocketManager().broadcast('agent:message', {
-              content: `⚠️ Prompt copied to clipboard.\n\nAutomatic submission was not possible. Please **Paste (Ctrl+V)** into the IDE chat and press Enter.`,
-              delta: false
-            });
-          }
+            if (code !== 0) {
+              companionServer?.getSocketManager().broadcast('agent:message', {
+                content: `\n\n*(Process exited with error code ${code})*`,
+                delta: true
+              });
+            }
+          });
+
+          child.on('error', (err) => {
+            throw err;
+          });
 
         } catch (e: any) {
-          vscode.window.showErrorMessage(`Failed to route prompt to chat: ${e.message || e}`);
+          vscode.window.showErrorMessage(`Failed to route prompt: ${e.message || e}`);
           companionServer?.getSocketManager().broadcast('agent:status', {
             status: 'error',
             label: 'Failed to dispatch'
+          });
+          companionServer?.getSocketManager().broadcast('agent:message', {
+            content: `❌ Error: ${e.message || e}`,
+            delta: false
           });
         }
 
