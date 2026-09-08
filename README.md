@@ -29,8 +29,8 @@ If you want to build and modify the extension yourself:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/aditya37100/Antigravity-Remote-IDE.git
-   cd Antigravity-Remote-IDE
+   git clone https://github.com/aditya37100/Remote-IDE.git
+   cd Remote-IDE
    ```
 
 2. **Install dependencies:**

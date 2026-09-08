@@ -9,7 +9,7 @@ This file provides comprehensive technical context, architecture specifications,
 - **Project Name:** `antigravity-remote-ide`
 - **Author / Developer:** Aditya (`https://github.com/aditya37100`)
 - **Publisher ID:** `aditya`
-- **GitHub Repository:** `https://github.com/aditya37100/antigravity-remote-ide`
+- **GitHub Repository:** `https://github.com/aditya37100/Remote-IDE`
 - **Purpose:** A Google Antigravity IDE extension that allows developers to leave their workstation/laptop running anywhere and monitor, steer, and interact with running AI agents from a mobile device (iOS Safari, Android Chrome, or PWA) at **$0 hosting cost**.
 - **Core Architecture:** Localhost-as-Server. The workstation runs an embedded Express & WebSocket server, which is securely exposed over an encrypted ephemeral Cloudflare Quick Tunnel (`trycloudflare.com`) with zero-trust token and 6-digit PIN authentication.
 - **Current Version:** `0.1.0`
