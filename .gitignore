@@ -6,3 +6,4 @@ dist/
 *.log
 .env
 agent.md
+requirements.md
