@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#131722">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Antigravity Remote">
+  <link rel="manifest" href="manifest.json">
+  <title>Antigravity Mobile Remote Companion</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="brand-icon">AG</div>
+      <div class="brand-title">Antigravity Remote</div>
+    </div>
+    <div id="status-badge" class="status-badge">
+      <div class="status-dot"></div>
+      <span id="status-text">Connecting...</span>
+    </div>
+  </header>
+
+  <!-- Viewport Panes -->
+  <main class="app-content">
+
+    <!-- TAB 1: Chat Stream & Steering -->
+    <section id="tab-chat" class="tab-pane active">
+      <!-- Approval Banner (urgent pop-down) -->
+      <div id="approval-banner" class="approval-card" style="display:none;">
+        <div class="approval-title">
+          <span>⚠️</span>
+          <span>Permission Requested</span>
+        </div>
+        <div id="approval-desc" class="approval-details">Agent requests permission to execute a terminal command.</div>
+        <div class="approval-actions">
+          <button id="approve-btn" class="approval-btn approve">Approve</button>
+          <button id="reject-btn" class="approval-btn reject">Reject</button>
+        </div>
+      </div>
+
+      <!-- Messages & Thought Stream -->
+      <div id="chat-scroll" class="chat-scroll">
+        <div class="message assistant">
+          <div class="message-bubble">
+            <strong>Antigravity Companion Connected.</strong><br>
+            Your workstation agent is synced in real-time. You can monitor reasoning, review diffs, approve tool executions, or send instructions below.
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action & Input Bar -->
+      <div class="chat-input-container">
+        <div class="quick-actions-bar">
+          <button id="interrupt-btn" class="interrupt-btn" style="display:none;">
+            <span>⏹</span>
+            <span>Interrupt Agent</span>
+          </button>
+        </div>
+        <div class="input-row">
+          <textarea id="prompt-input" class="chat-textarea" rows="1" placeholder="Instruct agent..."></textarea>
+          <button id="send-btn" class="send-btn" aria-label="Send">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Workspace Files & Diffs -->
+    <section id="tab-files" class="tab-pane">
+      <div class="files-view">
+        <div class="sub-tabs">
+          <button class="sub-tab-btn active" data-subtab="files">Project Files</button>
+          <button class="sub-tab-btn" data-subtab="diffs">Git Diffs</button>
+        </div>
+        <div id="file-tree-container"></div>
+        <div id="diffs-container" style="display:none;"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Settings & Session -->
+    <section id="tab-settings" class="tab-pane">
+      <div style="padding:20px;display:flex;flex-direction:column;gap:16px;">
+        <div style="background:var(--bg-card);padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-color);">
+          <h3 style="font-size:15px;margin-bottom:8px;color:var(--accent-cyan);">Session Info</h3>
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Encrypted connection to your Antigravity IDE.</p>
+          <p style="font-size:12px;color:var(--text-muted);">Zero Cloud Storage • Localhost-as-Server</p>
+        </div>
+
+        <div style="background:var(--bg-card);padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-color);">
+          <h3 style="font-size:15px;margin-bottom:12px;color:var(--text-primary);">Audio & Alerts</h3>
+          <button onclick="window.soundManager && window.soundManager.playApprovalChime()" style="padding:10px 14px;background:rgba(255,255,255,0.06);color:var(--text-primary);border:1px solid var(--border-color);border-radius:8px;font-size:13px;cursor:pointer;width:100%;">
+            🔔 Test Approval Chime
+          </button>
+        </div>
+
+        <button onclick="localStorage.removeItem('ag_token');window.location.reload();" style="padding:12px;background:rgba(244,63,94,0.15);color:var(--accent-rose);border:1px solid rgba(244,63,94,0.3);border-radius:var(--radius-md);font-weight:600;font-size:14px;cursor:pointer;">
+          Disconnect This Device
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span>Chat</span>
+    </button>
+    <button class="nav-item" data-tab="files">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      <span>Files & Diffs</span>
+    </button>
+    <button class="nav-item" data-tab="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- File Content Modal -->
+  <div id="file-content-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:50;flex-direction:column;">
+    <div style="height:50px;background:var(--bg-secondary);display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border-color);">
+      <span id="file-content-title" style="font-size:13px;font-family:monospace;color:var(--accent-cyan);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80%;"></span>
+      <button id="close-file-modal" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div id="file-content-body" style="flex:1;overflow-y:auto;padding:16px;font-family:monospace;font-size:12px;line-height:1.5;color:#cbd5e1;white-space:pre-wrap;background:#06080d;"></div>
+  </div>
+
+  <!-- Authentication PIN Overlay -->
+  <div id="auth-overlay" class="auth-overlay" style="display:none;">
+    <div class="auth-card">
+      <div class="brand-icon" style="margin:0 auto 14px;width:40px;height:40px;font-size:18px;">AG</div>
+      <h2 style="font-size:18px;margin-bottom:6px;">Pair Your Mobile Device</h2>
+      <p style="font-size:13px;color:var(--text-secondary);">Enter the 6-digit PIN shown on your Antigravity IDE sidebar.</p>
+
+      <input type="tel" id="pin-input" class="pin-input" maxlength="6" placeholder="••••••" autofocus>
+      <div id="pin-error" style="color:var(--accent-rose);font-size:12px;margin-bottom:12px;display:none;"></div>
+
+      <button id="pin-submit-btn" class="pin-submit-btn">Connect to Antigravity</button>
+    </div>
+  </div>
+
+  <script src="js/audio.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

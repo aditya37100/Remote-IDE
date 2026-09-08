@@ -1,0 +1,162 @@
+{
+  "name": "antigravity-mobile-remote",
+  "displayName": "Antigravity Mobile Remote Companion",
+  "description": "Securely monitor, steer, and interact with Antigravity AI agents, diffs, and workspace from your mobile phone at $0 cost.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": "Aditya",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aditya37100/antigravity-mobile-remote"
+  },
+  "publisher": "aditya",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "antigravity",
+    "mobile",
+    "agent",
+    "remote",
+    "ai",
+    "companion"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "antigravity-remote-container",
+          "title": "Antigravity Remote",
+          "icon": "resources/mobile-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "antigravity-remote-container": [
+        {
+          "type": "webview",
+          "id": "antigravityRemote.sidebarView",
+          "name": "Mobile Remote Control"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "antigravityRemote.start",
+        "title": "Antigravity Remote: Start Session",
+        "icon": "$(broadcast)"
+      },
+      {
+        "command": "antigravityRemote.stop",
+        "title": "Antigravity Remote: Stop Session",
+        "icon": "$(circle-slash)"
+      },
+      {
+        "command": "antigravityRemote.regeneratePin",
+        "title": "Antigravity Remote: Regenerate PIN & Token",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "antigravityRemote.openInBrowser",
+        "title": "Antigravity Remote: Open Mobile Web UI in Browser",
+        "icon": "$(globe)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "antigravityRemote.start",
+          "when": "view == antigravityRemote.sidebarView && !antigravityRemote:isRunning",
+          "group": "navigation"
+        },
+        {
+          "command": "antigravityRemote.stop",
+          "when": "view == antigravityRemote.sidebarView && antigravityRemote:isRunning",
+          "group": "navigation"
+        },
+        {
+          "command": "antigravityRemote.regeneratePin",
+          "when": "view == antigravityRemote.sidebarView && antigravityRemote:isRunning",
+          "group": "navigation"
+        },
+        {
+          "command": "antigravityRemote.openInBrowser",
+          "when": "view == antigravityRemote.sidebarView && antigravityRemote:isRunning",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Antigravity Mobile Remote",
+      "properties": {
+        "antigravityRemote.port": {
+          "type": "number",
+          "default": 39871,
+          "description": "Local port for the embedded mobile companion server."
+        },
+        "antigravityRemote.sessionExpiryHours": {
+          "type": "number",
+          "default": 3,
+          "description": "Session expiry duration in hours before the tunnel automatically shuts down (0 = no expiry)."
+        },
+        "antigravityRemote.proxy": {
+          "type": "string",
+          "default": "",
+          "description": "Optional HTTP/HTTPS proxy URL (e.g. http://127.0.0.1:8080) for Tunnel download and connection. If empty, falls back to VS Code's http.proxy setting."
+        },
+        "antigravityRemote.autoStartOnLaunch": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start the remote companion session whenever Antigravity IDE launches."
+        },
+        "antigravityRemote.preventSleep": {
+          "type": "boolean",
+          "default": true,
+          "description": "Prevent laptop from sleeping while an AI agent task is actively executing."
+        },
+        "antigravityRemote.telegramBotToken": {
+          "type": "string",
+          "default": "",
+          "description": "Optional: Telegram Bot Token (from @BotFather) for instant phone alerts."
+        },
+        "antigravityRemote.telegramChatId": {
+          "type": "string",
+          "default": "",
+          "description": "Optional: Your Telegram Chat ID to receive approval pings on mobile."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build": "node esbuild.config.js",
+    "build:watch": "node esbuild.config.js --watch",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "localtunnel": "^2.0.2",
+    "qrcode": "^1.5.4",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^20.17.19",
+    "@types/qrcode": "^1.5.5",
+    "@types/vscode": "^1.80.0",
+    "@types/ws": "^8.5.14",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.3"
+  }
+}
